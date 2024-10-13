@@ -241,6 +241,45 @@ export const startGame = (req: Request, res: Response) => {
     }
 }
 
+// Get the current status of the user's and computer's ship count
+export const getShipStatus = (req: Request, res: Response) => {
+    try {
+        const gameId = req.params.gameId;
+        const game = runningGames.get(gameId);
+        if (game) {
+            if (game.computerShipStatus.length === 0) {
+                for (let i = 0; i < game.computerFloatingShipCells.length; i++) {
+                    let shipStatus = game.computerFloatingShipCells[i].length.toString();
+                    shipStatus = ("0/" + shipStatus);
+                    game.computerShipStatus.push(shipStatus);
+                }
+            }
+            if (game.userShipStatus.length === 0) {
+                for (let i = 0; i < game.userFloatingShipCells.length; i++) {
+                    let shipStatus = game.userFloatingShipCells[i].length.toString();
+                    shipStatus = ("0/" + shipStatus);
+                    game.userShipStatus.push(shipStatus);
+                }
+            }
+            res.status(200).send({
+                bShipCount: game.bShipCount,
+                dShipCount: game.dShipCount,
+                userShipStatus: game.userShipStatus,
+                computerShipStatus: game.computerShipStatus
+            });
+        } else {
+            res.status(404).send({
+                message: "Game Not Found."
+            });
+        }
+    } catch (e) {
+        console.error(e);
+        res.status(500).send({
+            message: "Internal Server Error Occurred."
+        });
+    }
+}
+
 // Get the current status of the user's board
 export const getUserBoard = (req: Request, res: Response) => {
     try {
@@ -369,13 +408,29 @@ export const userAttack = (req: Request, res: Response) => {
                 for (let i = 0; i < game.computerFloatingShipCells.length; i++) {
                     // Check if the entire ship is destroyed
                     let allCellsHit = true;
-                    for (let x = 0; x < game.computerFloatingShipCells[i].length; x++) {
-                        let shipPos = game.computerFloatingShipCells[i][x];
-                        if (game.computerBoard[getIndexForAlpha(shipPos.charAt(0))][parseInt(shipPos.slice(1)) - 1] === constants.SHIP_CELL) {
-                            allCellsHit = false;
-                            break;
+                    // Gather ship status for the computer
+                    let shipStatusList = [];
+                    for (let x = 0; x < game.computerFloatingShipCells.length; x++) {
+                        let shipStatus = game.computerFloatingShipCells[x].length.toString();
+                        let hitCount = 0;
+                        for (let y = 0; y < game.computerFloatingShipCells[x].length; y++) {
+                            let shipPos = game.computerFloatingShipCells[x][y];
+                            if (x==i && game.computerBoard[getIndexForAlpha(shipPos.charAt(0))][parseInt(shipPos.slice(1)) - 1] === constants.SHIP_CELL) {
+                                allCellsHit = false;
+                            }
+                            if (game.computerBoard[getIndexForAlpha(shipPos.charAt(0))][parseInt(shipPos.slice(1)) - 1] === constants.HIT_CELL) {
+                                hitCount++;
+                            }
                         }
+                        shipStatus = (hitCount + "/" + shipStatus);
+                        shipStatusList.push(shipStatus);
                     }
+                    for (let x = 0; x < game?.computerDestroyedShipCells.length; x++) {
+                        let shipStatus = game.computerDestroyedShipCells[x].length.toString();
+                        shipStatus = (shipStatus + "/" + shipStatus);
+                        shipStatusList.push(shipStatus);
+                    }
+                    game.computerShipStatus = shipStatusList;
                     if (allCellsHit) {
                         // Remove the destroyed ship from the floating ships and added to destroyed ships
                         game.computerDestroyedShipCells.push(game.computerFloatingShipCells[i]);
@@ -385,13 +440,19 @@ export const userAttack = (req: Request, res: Response) => {
                         if (game.computerFloatingShipCells.length === 0) {
                             game.gameStatus = constants.GAME_OVER;
                             res.status(200).send({
-                                message: "User Hit Computer Ship. All Ships Destroyed. User Wins."
+                                status: "USER_WIN",
+                                message: "User Hit Computer Ship. All Ships Destroyed. User Wins.",
+                                userTurnCount: game.userTurnCount,
+                                computerTurnCount: game.computerTurnCount
                             });
                             return;
                         } else {
                             game.gameStatus = constants.GAME_COMPUTER_TURN;
                             res.status(200).send({
-                                message: "User Hit Computer Ship. Ship Destroyed."
+                                status: "USER_SHIP_DESTROYED",
+                                message: "User Hit Computer Ship. Ship Destroyed.",
+                                userTurnCount: game.userTurnCount,
+                                computerTurnCount: game.computerTurnCount
                             });
                             return;
                         }
@@ -400,7 +461,10 @@ export const userAttack = (req: Request, res: Response) => {
                 game.userTurnCount++;
                 game.gameStatus = constants.GAME_COMPUTER_TURN;
                 res.status(200).send({
-                    message: "User Hit Computer Ship."
+                    status: "USER_HIT",
+                    message: "User Hit Computer Ship.",
+                    userTurnCount: game.userTurnCount,
+                    computerTurnCount: game.computerTurnCount
                 });
             } else if (
                 game.computerBoard[attackXIndex][attackYIndex] === constants.HIT_CELL ||
@@ -414,7 +478,10 @@ export const userAttack = (req: Request, res: Response) => {
                 game.userTurnCount++;
                 game.gameStatus = constants.GAME_COMPUTER_TURN;
                 res.status(200).send({
-                    message: "User Missed."
+                    status: "USER_MISS",
+                    message: "User Missed.",
+                    userTurnCount: game.userTurnCount,
+                    computerTurnCount: game.computerTurnCount
                 });
             }
         } else {
@@ -526,13 +593,29 @@ export const computerAttack = (req: Request, res: Response) => {
                 for (let i = 0; i < game.userFloatingShipCells.length; i++) {
                     // Check if the entire ship is destroyed
                     let allCellsHit = true;
-                    for (let x = 0; x < game.userFloatingShipCells[i].length; x++) {
-                        let shipPos = game.userFloatingShipCells[i][x];
-                        if (game.userBoard[getIndexForAlpha(shipPos.charAt(0))][parseInt(shipPos.slice(1)) - 1] === constants.SHIP_CELL) {
-                            allCellsHit = false;
-                            break;
+                    // Gather ship status for the user
+                    let shipStatusList = [];
+                    for (let x = 0; x < game.userFloatingShipCells.length; x++) {
+                        let shipStatus = game.userFloatingShipCells[x].length.toString();
+                        let hitCount = 0;
+                        for (let y = 0; y < game.userFloatingShipCells[x].length; y++) {
+                            let shipPos = game.userFloatingShipCells[x][y];
+                            if (x==i && game.userBoard[getIndexForAlpha(shipPos.charAt(0))][parseInt(shipPos.slice(1)) - 1] === constants.SHIP_CELL) {
+                                allCellsHit = false;
+                            }
+                            if (game.userBoard[getIndexForAlpha(shipPos.charAt(0))][parseInt(shipPos.slice(1)) - 1] === constants.HIT_CELL) {
+                                hitCount++;
+                            }
                         }
+                        shipStatus = (hitCount + "/" + shipStatus);
+                        shipStatusList.push(shipStatus);
                     }
+                    for (let x = 0; x < game?.userDestroyedShipCells.length; x++) {
+                        let shipStatus = game.userDestroyedShipCells[x].length.toString();
+                        shipStatus = (shipStatus + "/" + shipStatus);
+                        shipStatusList.push(shipStatus);
+                    }
+                    game.userShipStatus = shipStatusList;
                     if (allCellsHit) {
                         game.userDestroyedShipCells.push(game.userFloatingShipCells[i]);
                         game.userFloatingShipCells.splice(i, 1);
@@ -543,13 +626,19 @@ export const computerAttack = (req: Request, res: Response) => {
                         if (game.userFloatingShipCells.length === 0) {
                             game.gameStatus = constants.GAME_OVER;
                             res.status(200).send({
-                                message: "Computer Hit User Ship. All Ships Destroyed. Computer Wins."
+                                status: "COMPUTER_WIN",
+                                message: "Computer Hit User Ship. All Ships Destroyed. Computer Wins.",
+                                userTurnCount: game.userTurnCount,
+                                computerTurnCount: game.computerTurnCount
                             });
                             return;
                         } else {
                             game.gameStatus = constants.GAME_USER_TURN;
                             res.status(200).send({
-                                message: "Computer Hit User Ship. Ship Destroyed."
+                                status: "COMPUTER_SHIP_DESTROYED",
+                                message: "Computer Hit User Ship. Ship Destroyed.",
+                                userTurnCount: game.userTurnCount,
+                                computerTurnCount: game.computerTurnCount
                             });
                             return;
                         }
@@ -560,7 +649,10 @@ export const computerAttack = (req: Request, res: Response) => {
                 // Store the successful attack to follow-up
                 game.computerPreviousValidAttacks.push(getAlphaForIndex(attackXIndex) + (attackYIndex + 1));
                 res.status(200).send({
-                    message: "Computer Hit User Ship."
+                    status: "COMPUTER_HIT",
+                    message: "Computer Hit User Ship.",
+                    userTurnCount: game.userTurnCount,
+                    computerTurnCount: game.computerTurnCount
                 });
             } else {
                 game.computerPreviousAttacks.push(getAlphaForIndex(attackXIndex) + (attackYIndex + 1));
@@ -572,7 +664,10 @@ export const computerAttack = (req: Request, res: Response) => {
                     game.computerPreviousInvalidAttacks.push(getAlphaForIndex(attackXIndex) + (attackYIndex + 1));
                 }
                 res.status(200).send({
-                    message: "Computer Missed."
+                    status: "COMPUTER_MISS",
+                    message: "Computer Missed.",
+                    userTurnCount: game.userTurnCount,
+                    computerTurnCount: game.computerTurnCount
                 });
             }
         } else {

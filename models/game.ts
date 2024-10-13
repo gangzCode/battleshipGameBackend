@@ -16,6 +16,9 @@ export default class Game {
     userBoard: string[][] = [];
     computerBoard: string[][] = [];
 
+    userShipStatus: string[] = [];
+    computerShipStatus: string[] = [];
+
     userFloatingShipCells: string[][] = [];
     userDestroyedShipCells: string[][] = [];
 

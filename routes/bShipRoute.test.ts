@@ -81,6 +81,15 @@ describe('Express App', () => {
         expect(response.body).toHaveProperty('message');
     });
 
+    it('should get game ship counts', async () => {
+        const response = await request(app).get(`/getShipStatus/${gameID}`);
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('bShipCount');
+        expect(response.body).toHaveProperty('dShipCount');
+        expect(response.body).toHaveProperty('userShipStatus');
+        expect(response.body).toHaveProperty('computerShipStatus');
+    });
+
     it('should return the user board', async () => {
         const response = await request(app).get(`/getUserBoard/${gameID}`);
         expect(response.status).toBe(200);

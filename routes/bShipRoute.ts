@@ -10,6 +10,7 @@ bShipRouter.get('/startGame/:gameId', bShipController.startGame);
 bShipRouter.post('/userAttack', bShipController.userAttack);
 bShipRouter.post('/computerAttack', bShipController.computerAttack);
 
+bShipRouter.get('/getShipStatus/:gameId', bShipController.getShipStatus);
 bShipRouter.get('/getUserBoard/:gameId', bShipController.getUserBoard);
 bShipRouter.get('/getComputerBoard/:gameId', bShipController.getComputerBoard);
 bShipRouter.get('/getBoardsAsHTML/:gameId', bShipController.getBoardsAsHTML);
