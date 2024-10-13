@@ -70,6 +70,7 @@ Here are the available API endpoints:
 | `/game/getUserBoard/:gameId`         | GET    | Retrieve the user’s board                  |
 | `/game/getComputerBoard/:gameId`     | GET    | Retrieve the computer’s board              |
 | `/game/getBoardsAsHTML/:gameId`      | GET    | Retrieve both boards in HTML format        |
+| `/game/getShipStatus/:gameId`        | GET    | Retrieve the status of both party ships    |
 
 ## Database
 
