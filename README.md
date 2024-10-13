@@ -8,9 +8,16 @@ This project implements a Battleship game back-end using **Node.js** and **Expre
 
 ## Features
 
-- Random and manual ship placement.
+- Start mutiple game simultaneously.
 - Player vs Computer gameplay.
-- SQLite database to store game state.
+- Random ship placement for computer only and manual ship placement and removal for player only.
+- After intializing and placing the ships manually for player can start the game.
+- After starting can't change the posistions of ships for both computer and player.
+- Computer will make the first attack.
+- Player can make the second attack.
+- If player's ship got hit the computer will make the attacks on the adjacent boxes of the hit box to complete the destruction of that ship.
+- Can view the Boards of the Player and Computer by generating the HTML for the Visual View to see which cells got new,hit or miss cells.
+- SQLite database used to store game test data.
 - Track game phases (PENDING, READY, USER_TURN, COMPUTER_TURN, GAME_OVER).
 
 ## Prerequisites
@@ -52,7 +59,7 @@ npm test
 
 Here are the available API endpoints:
 
-| Endpoint                            | Method | Description                                |
+| Endpoint                             | Method | Description                                |
 |------------------------------------- |--------|--------------------------------------------|
 | `/game/initializeGame`               | GET    | Initialize a new game                      |
 | `/game/placeShip`                    | POST   | Manually place a ship on the user’s grid   |
