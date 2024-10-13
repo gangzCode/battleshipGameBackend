@@ -16,13 +16,13 @@ This project implements a Battleship game back-end using **Node.js** and **Expre
 - Computer will make the first attack.
 - Player can make the second attack.
 - If player's ship got hit the computer will make the attacks on the adjacent boxes of the hit box to complete the destruction of that ship.
-- Can view the Boards of the Player and Computer by generating the HTML for the Visual View to see which cells got new,hit or miss cells.
+- A basic HTML frontend build can be called through {{BASE_URL}}/getBoardsAsHTML/{{GAME_CODE}} API to view the Visual representation of the boards for both computer and player with the status for each cell whether it's a hit cell, never hit cell, missed hit cell in the response preview of the postman.
 - SQLite database used to store game test data.
 - Track game phases (PENDING, READY, USER_TURN, COMPUTER_TURN, GAME_OVER).
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) (14.x or above)
+- [Node.js](https://nodejs.org/) (18.20.2)
 - [npm](https://www.npmjs.com/) (Node Package Manager)
 - SQLite for database storage
 
